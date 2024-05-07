@@ -1,0 +1,7 @@
+create_table("questions") {
+  t.Column("id", "integer", {primary: true})
+  t.Column("question", "string", {})
+  t.Column("test_id", "integer", {})
+  t.Column("user_id", "integer", {})
+  t.Column("grade_subject_id", "integer", {})
+}

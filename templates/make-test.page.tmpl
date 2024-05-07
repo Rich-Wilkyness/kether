@@ -1,0 +1,53 @@
+{{template "base" .}}
+
+{{define "content"}}
+<div class="container">
+    <div class="row">
+        <!-- this div helps center the col-md-6. there are 12 columns, we designate size of 3 columns here and then size of 6, which leaves 3 which we do not need to declare. this way our form is in the middle 6 -->
+        <div class="col-md-3"></div> 
+
+        <div class="col-md-6">
+
+            <h1 class="text-center mt-4">Make Test</h1>
+
+            {{$res := index .Data "test"}} <!-- this is the data we passed from the controller. This allows us to populate our form with values they previously input before an error -->
+            <!-- the naming comes from the model we created for the form on models/models -->
+            <!-- he explains this well in section 8.68 at 5 mins -->
+            <form action="" method="post" class="" novalidate>
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+
+                <div class="form-group mt-5">
+                    <label for="name">Test Name:</label>
+                    {{with .Form.Errors.Get "name"}}
+                    <!-- the "." just displays what we passed from the with above -->
+                        <label class="text-danger">{{.}}</label> 
+                    {{end}}
+                    <!-- the with is like an if statement. if there is an error, then "is-invalid" is added to the class, making the field light up red -->
+                    <input required value="{{$res.Name}}" type="text" name="name" id="name" class='form-control {{with .Form.Errors.Get "name" }} is-invalid {{end}}' autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="version">Version #:</label>
+                    {{with .Form.Errors.Get "version"}}
+                        <label class="text-danger">{{.}}</label> 
+                    {{end}}
+                    <input required value="{{$res.Version}}" type="text" name="version" id="version" class='form-control {{with .Form.Errors.Get "version" }} is-invalid {{end}}' autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="class_id">Class:</label>
+                    {{with .Form.Errors.Get "email"}}
+                        <label class="text-danger">{{.}}</label> 
+                    {{end}}
+                    <input required value="{{$res.ClassID}}" type="text" name="class_id" id="class_id" class='form-control {{with .Form.Errors.Get "class_id" }} is-invalid {{end}}' autocomplete="off">
+                </div>
+                
+                {{/* need to setup session to get the current users id to plug in here */}}
+                <input type="hidden" name="user_id" value="1"> 
+
+                <hr>
+                <input type="submit" class="btn btn-primary" value="Create Test">
+
+            </form>
+        </div>
+    </div>
+</div>
+{{end}}

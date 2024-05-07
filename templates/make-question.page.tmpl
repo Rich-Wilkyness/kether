@@ -1,0 +1,16 @@
+{{template "base" .}}
+
+{{define "content"}}
+    {{$resQuestion := index .Data "question"}}
+    {{$resChoice := index .Data "answer-choice"}}
+
+  <div class="container">
+    <div class="row">
+        <div class="col">
+            <h1 class="mt-5">Create Question</h1>
+
+
+        </div>
+    </div>
+  </div>
+{{end}}

@@ -1,0 +1,24 @@
+{{template "base" .}}
+
+{{define "content"}}
+<div class="container">
+      <!-- bootstrap rows and columns example -->
+    <div class="row">
+        <h1 class="text-center mt-4">Welcome to Kether Learning Center - The Crown</h1>
+        <p>
+          Kether Learning Center - The Crown is a place where you can learn and grow. We offer a variety of tools to help you reach your full potential. Whether you're looking to build your own curriculum, learn something new, or just have fun, we have something for everyone. So come join us at Kether Learning Center - The Crown and start your journey to success today!
+        </p>
+    </div>
+    <div class="row">
+        <div class="col text-center">
+          <a href="/login" class="btn btn-success">Login</a>
+          <p>No account? <a href="/create-user">Create Account</a></p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col text-center">
+          <a href="/search-courses" class="btn btn-success">Find Course</a>
+        </div>
+    </div>
+</div>
+{{end}}

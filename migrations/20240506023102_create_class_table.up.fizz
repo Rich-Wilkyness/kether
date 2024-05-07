@@ -1,0 +1,4 @@
+create_table("classes") {
+  t.Column("id", "integer", {primary: true})
+  t.Column("teacher_id", "integer", {})
+}

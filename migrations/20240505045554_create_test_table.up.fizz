@@ -1,0 +1,7 @@
+create_table("tests") {
+    t.Column("id", "integer", {primary: true})
+    t.Column("name", "string", {})
+    t.Column("version", "integer", {"default": 1})
+    t.Column("class_id", "integer", {})
+    t.Column("user_id", "integer", {})
+}
