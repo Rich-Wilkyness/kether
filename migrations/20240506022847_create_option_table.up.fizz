@@ -1,6 +1,6 @@
-create_table("options") {
+create_table("answer_choices") {
   t.Column("id", "integer", {primary: true})
-  t.Column("option", "string", {"default": ""})
+  t.Column("choice", "string", {"default": ""})
   t.Column("correct", "bool", {})
   t.Column("question_id", "integer", {})
 }

@@ -1,5 +1,0 @@
-create_table("grade_subjects") {
-  t.Column("id", "integer", {primary: true})
-  t.Column("grade", "integer", {})
-  t.Column("subject", "string", {"default": ""})
-}

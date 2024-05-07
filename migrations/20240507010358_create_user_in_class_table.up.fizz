@@ -1,0 +1,5 @@
+create_table("user_in_class") {
+  t.Column("id", "integer", {primary: true})
+  t.Column("user_id", "integer", {})
+  t.Column("class_id", "integer", {})
+}

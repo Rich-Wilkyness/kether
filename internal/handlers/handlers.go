@@ -67,7 +67,7 @@ func (m *Repository) PostTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// this field will be populated by the session, so I'm not sure if it needs to be converted (what type is it?)
-	userID, err := strconv.Atoi(r.Form.Get("user_id")) // we need to convert the user_id (string) to an int. Atoi means alpha (like alphanumeric) to int
+	userID, err := strconv.Atoi(r.Form.Get("user_id"))
 	if err != nil {
 		log.Println(err)
 		return
@@ -188,7 +188,7 @@ func (m *Repository) PostQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// we need to insert our reservation into the database
+	// we need to insert our question into the database
 	err = m.DB.InsertQuestion(question)
 	if err != nil {
 		log.Println(err)
