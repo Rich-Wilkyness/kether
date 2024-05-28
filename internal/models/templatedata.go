@@ -15,4 +15,5 @@ type TemplateData struct {
 	Warning string      // type of message to warn a user (page not saved, etc.)
 	Error   string      // type of message to notify a user an error occured
 	Form    *forms.Form // we put this here so we have access to our form throughout our app
+	IsAuthenticated int // to check if user is authenticated, could be a bool if we wanted, but if users have different levels of access int is better
 }

@@ -28,5 +28,13 @@ func routes(app *config.AppConfig) http.Handler {
 	// this directory is where we will store things like images
 	fileServer := http.FileServer(http.Dir("./static/"))             // we first find our directory. by using "./" this is our root. and this is what is required by the Dir function
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer)) // then we feed our mux the directory by directing it to our static directory and removing static from the pathname of our files to get our filename
+
+	// this protects our admin routes
+	// the routes will have a combine name to get to them. for example /admin/dashboard
+	mux.Route("/admin", func(mux chi.Router) {
+		mux.Use(Auth)
+		// mux.Get("/dashboard", handlers.Repo.AccountDashboard)
+	})
+
 	return mux
 }

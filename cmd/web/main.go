@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Rich-Wilkyness/kether/internal/config"
 	"github.com/Rich-Wilkyness/kether/internal/driver"
 	"github.com/Rich-Wilkyness/kether/internal/handlers"
+	"github.com/Rich-Wilkyness/kether/internal/helpers"
 	"github.com/Rich-Wilkyness/kether/internal/models"
 	"github.com/Rich-Wilkyness/kether/internal/render"
 
@@ -23,6 +25,8 @@ var app config.AppConfig // We want our global template cache here.
 // if it was inside main we couldn't call it in our middleware file
 
 var session *scs.SessionManager
+var infoLog *log.Logger
+var errorLog *log.Logger
 
 func main() {
 	db, err := run()
@@ -59,6 +63,12 @@ func run() (*driver.DB, error) {
 	// change this to true when in production
 	app.InProduction = false
 
+	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	app.InfoLog = infoLog
+
+	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	app.ErrorLog = errorLog
+
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour              // We are assigning the lifetime of the session/cookie to 24 hours
 	session.Cookie.Persist = true                  // when true, this means that after someone closes the browser/webpage the session ends
@@ -89,6 +99,7 @@ func run() (*driver.DB, error) {
 
 	// this gives our render package access to the AppConfig (cache of template sets)
 	render.NewRender(&app)
+	helpers.NewHelpers(&app)
 
 	return db, nil
 }

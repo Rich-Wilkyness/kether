@@ -176,17 +176,17 @@ func (m *Repository) PostQuestion(w http.ResponseWriter, r *http.Request) {
 	form.Required("choice", "correct")
 
 	// this is so we can repopulate the form on errors, so they do not have to redo the form
-	if !form.Valid() {
-		data := make(map[string]interface{})
-		data["question"] = question
-		data["answerChoices"] = answerChoices
+	// if !form.Valid() {
+	// 	data := make(map[string]interface{})
+	// 	data["question"] = question
+	// 	data["answerChoices"] = answerChoices
 
-		render.Template(w, r, "make-question.page.tmpl", &models.TemplateData{
-			Form: form,
-			Data: data,
-		})
-		return
-	}
+	// 	render.Template(w, r, "make-question.page.tmpl", &models.TemplateData{
+	// 		Form: form,
+	// 		Data: data,
+	// 	})
+	// 	return
+	// }
 
 	// we need to insert our question into the database
 	err = m.DB.InsertQuestion(question)
