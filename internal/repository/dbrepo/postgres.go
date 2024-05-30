@@ -2,9 +2,11 @@ package dbrepo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Rich-Wilkyness/kether/internal/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (m *postgresDBRepo) AllUsers() bool {
@@ -44,4 +46,104 @@ func (m *postgresDBRepo) InsertQuestion(r models.Question) error {
 		return err
 	}
 	return nil
+}
+
+// RegisterUser registers a user in the database
+func (m *postgresDBRepo) RegisterUser(u models.User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	stmt := `insert into users (first_name = $1, last_name = $2, email = $3, password = $4, access_level = $5, created_at = $6, updated_at = $7)`
+	_, err = m.DB.ExecContext(ctx, stmt, u.FirstName, u.LastName, u.Email, string(hashedPassword), u.AccessLevel, time.Now(), time.Now())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// returns user id
+func (m *postgresDBRepo) GetUserByID(id int) (models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		select id, first_name, last_name, email, created_at, updated_at
+		from users where id = $1`
+	row := m.DB.QueryRowContext(ctx, query, id)
+
+	var u models.User
+	err := row.Scan(
+		&u.ID,
+		&u.FirstName,
+		&u.LastName,
+		&u.Email,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
+	if err != nil {
+		return u, err
+	}
+	return u, nil
+}
+
+// UpdateUser updates a user in the database
+func (m *postgresDBRepo) UpdateUser(u models.User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		update users set first_name = $1, last_name = $2, email = $3, updated_at = $4
+	`
+	_, err := m.DB.ExecContext(ctx, query, u.FirstName, u.LastName, u.Email, time.Now())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteUser deletes a user from the database
+func (m *postgresDBRepo) DeleteUser(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `delete from users where id = $1`
+	_, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Authenticate authenticates a user
+func (m *postgresDBRepo) Authenticate(email, testPassword string) (int, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var id int
+	var hashedPassword string
+
+	query := `
+		select id, password 
+		from users 
+		where email = $1
+	`
+	row := m.DB.QueryRowContext(ctx, query, email)
+	err := row.Scan(&id, &hashedPassword)
+	if err != nil {
+		return id, "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(testPassword))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return 0, "", errors.New("incorrect password")
+	} else if err != nil {
+		return 0, "", err
+	}
+
+	return id, hashedPassword, nil
 }

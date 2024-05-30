@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -199,4 +200,234 @@ func (m *Repository) PostQuestion(w http.ResponseWriter, r *http.Request) {
 
 	// we want to redirect so our user does not submit twice (this is crucial for financial posts)
 	http.Redirect(w, r, "/make-question", http.StatusSeeOther) // we can use other status' for redirect, but this one works well enough (303)
+}
+
+// Register displays the registration page
+func (m *Repository) Register(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "register.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil),
+	})
+}
+
+// PostRegister handles the registration form
+func (m *Repository) PostRegister(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Form submission error")
+		http.Redirect(w, r, "/user/register", http.StatusTemporaryRedirect)
+		return
+	}
+
+	// create a new user
+	user := models.User{
+		FirstName:   r.Form.Get("first_name"),
+		LastName:    r.Form.Get("last_name"),
+		Email:       r.Form.Get("email"),
+		Password:    r.Form.Get("password"),
+		AccessLevel: 1,
+	}
+
+	// validate the form
+	form := forms.New(r.PostForm)
+	form.Required("first_name", "last_name", "email", "password")
+	form.IsEmail("email")
+	form.MinLength("password", 8, r)
+	if !form.Valid() {
+		render.Template(w, r, "register.page.tmpl", &models.TemplateData{Form: form})
+		return
+	}
+
+	// insert the user into the database
+	err = m.DB.RegisterUser(user)
+	if err != nil {
+		log.Println(err)
+		m.App.Session.Put(r.Context(), "error", "Server error. Please try again.")
+		http.Redirect(w, r, "/user/register", http.StatusSeeOther)
+		return
+	}
+
+	// send a flash success message to the user and redirect to login page
+	m.App.Session.Put(r.Context(), "flash", "Account created. Please log in.")
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (m *Repository) ShowLogin(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil),
+	})
+}
+
+func (m *Repository) PostShowLogin(w http.ResponseWriter, r *http.Request) {
+	_ = m.App.Session.RenewToken(r.Context()) // stops a session fixation attack by renewing the token every time the user logs in
+	// should be done every time a user logs in or logs out
+
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+	}
+
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	form := forms.New(r.PostForm)
+	form.Required("email", "password")
+	form.IsEmail("email")
+	if !form.Valid() {
+		render.Template(w, r, "login.page.tmpl", &models.TemplateData{Form: form})
+		return
+	}
+	id, _, err := m.DB.Authenticate(email, password)
+	if err != nil {
+		log.Println(err)
+		m.App.Session.Put(r.Context(), "error", "Invalid login credentials")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	user := models.User{
+		ID: id,
+	}
+
+	// this session is what we are going to use to check if the user is logged in or not
+	m.App.Session.Put(r.Context(), "user", user)
+	m.App.Session.Put(r.Context(), "flash", "Logged in successfully")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// Logout logs a user out
+func (m *Repository) Logout(w http.ResponseWriter, r *http.Request) {
+	_ = m.App.Session.Destroy(r.Context())    // destroys the session
+	_ = m.App.Session.RenewToken(r.Context()) // good practice to renew the token after destroying the session
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+}
+
+func (m *Repository) ShowAccountDashboard(w http.ResponseWriter, r *http.Request) {
+	u, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		m.App.Session.Put(r.Context(), "error", "Could not get user from session")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	// get the user from the database
+	user, err := m.DB.GetUserByID(u.ID)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Could not get user from database")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["user"] = user
+
+	render.Template(w, r, "account-dashboard.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
+}
+
+func (m *Repository) ShowAccountEdit(w http.ResponseWriter, r *http.Request) {
+	u, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		m.App.Session.Put(r.Context(), "error", "Could not get user from session")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	user, err := m.DB.GetUserByID(u.ID)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Could not get user from database")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["user"] = user
+
+	render.Template(w, r, "account-edit.page.tmpl", &models.TemplateData{
+		Data: data,
+	})
+}
+
+func (m *Repository) PostAccountEdit(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Could not parse form")
+		http.Redirect(w, r, "/account/edit", http.StatusSeeOther)
+		return
+	}
+
+	userID, _ := strconv.Atoi(r.Form.Get("user_id"))
+
+	user := models.User{
+		ID:        userID,
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Email:     r.Form.Get("email"),
+	}
+
+	form := forms.New(r.PostForm)
+	form.Required("first_name", "last_name", "email")
+	form.IsEmail("email")
+
+	if !form.Valid() {
+		data := make(map[string]interface{})
+		data["user"] = user
+
+		render.Template(w, r, "account-edit.page.tmpl", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+		return
+	}
+
+	err = m.DB.UpdateUser(user)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	m.App.Session.Put(r.Context(), "flash", "Changes saved")
+	http.Redirect(w, r, "/account/dashboard", http.StatusSeeOther)
+}
+
+// JSON response structure for account delete
+type jsonResponse struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
+// AccountDelete deletes a user account
+func (m *Repository) PostAccountDelete(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal server error",
+		}
+
+		out, _ := json.MarshalIndent(resp, "", "    ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	userID, _ := strconv.Atoi(r.Form.Get("user_id"))
+	err = m.DB.DeleteUser(userID)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error deleting the user",
+		}
+		out, _ := json.MarshalIndent(resp, "", "    ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+	resp := jsonResponse{
+		OK:      true,
+		Message: "User successfully deleted",
+	}
+	out, _ := json.MarshalIndent(resp, "", "    ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
 }

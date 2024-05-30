@@ -24,6 +24,12 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/make-test", handlers.Repo.Test)
 	mux.Post("/make-test", handlers.Repo.PostTest)
 
+	mux.Get("/user/register", handlers.Repo.Register)
+	mux.Post("/user/register", handlers.Repo.PostRegister)
+
+	mux.Get("/user/login", handlers.Repo.ShowLogin)
+	mux.Post("/user/login", handlers.Repo.PostShowLogin)
+
 	// this allows our tmpl templates to access our static directory
 	// this directory is where we will store things like images
 	fileServer := http.FileServer(http.Dir("./static/"))             // we first find our directory. by using "./" this is our root. and this is what is required by the Dir function
@@ -31,9 +37,12 @@ func routes(app *config.AppConfig) http.Handler {
 
 	// this protects our admin routes
 	// the routes will have a combine name to get to them. for example /admin/dashboard
-	mux.Route("/admin", func(mux chi.Router) {
+	mux.Route("/account", func(mux chi.Router) {
 		mux.Use(Auth)
-		// mux.Get("/dashboard", handlers.Repo.AccountDashboard)
+		mux.Get("/dashboard", handlers.Repo.ShowAccountDashboard)
+		mux.Get("/edit", handlers.Repo.ShowAccountEdit)
+		mux.Post("/edit", handlers.Repo.PostAccountEdit)
+		mux.Post("/delete", handlers.Repo.PostAccountDelete)
 	})
 
 	return mux

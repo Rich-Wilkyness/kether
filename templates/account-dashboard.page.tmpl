@@ -1,0 +1,88 @@
+{{template "base" .}}
+
+{{define "content"}}
+    <div class="container">
+
+        <div class="row">
+            <div class="col">
+                {{$user := index .Data "user"}}
+
+                <h1 class="text-center mt-4">Account Page</h1>
+                <p>
+                    <strong>First Name:</strong> {{$user.User.FirstName}} <br>
+                    <strong>Last Name:</strong> {{$user.User.LastName}} <br>
+                    <strong>Email:</strong> {{$user.User.Email}}
+                </p>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col text-center">
+                <a href="/account/edit" class="btn btn-warning">Edit Account</a>
+            </div>
+            <div class="col text-center">
+                <a href="/account/password" class="btn btn-warning">Change Password</a>
+            </div>
+            <div class="col text-center">
+                <a id="delete-account-button" href="#!" class="btn btn-danger">Delete Account</a>
+            </div>
+        </div>
+
+
+    </div>
+{{end}}
+
+{{define "js"}}
+    <script>
+        document.getElementById("delete-account-button").addEventListener("click", function () {
+            let html = `
+                <form id="delete-account-form" action="" method="post" novalidate class="needs-validation">
+                    <div class="form-row">
+                        <div class="col">
+                            
+                        </div>
+                    </div>
+                </form>
+                `
+            // attention comes from our base.layout js. It is what we are using to display the modal form (html above), and to handle the form submission
+            // the attention function takes a custom object with a msg, title, and callback. The callback is called when the form is submitted
+            attention.custom({
+                msg: html,
+                title: "Are you sure you wish to delete your account?",
+
+                callback: function (result) {
+
+                    let form = document.getElementById("delete-account-form");
+                    // this is a built in js object that takes a form and creates a key value pair object from the form data
+                    let formData = new FormData(form);
+                    // we are adding the csrf token to the form data
+                    formData.append("csrf_token", "{{.CSRFToken}}");
+                    formData.append("user_id", "{{.User.ID}}"); // this causes an error when caching 
+
+                    // fetch is a get if it only takes one argument, but we are passing two arguments so it is a post
+                    fetch('/account/delete', {
+                        method: "post",
+                        body: formData,
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.ok) {
+                                attention.custom({
+                                    icon: 'success',
+                                    showConfirmButton: false,
+                                    msg: '<p>Account successfully deleted</p>'
+                                        + '<p><a href="/login" class="btn btn-primary">Login</a></p>'
+                                        + '<p><a href="/" class="btn btn-primary">Home</a></p>',
+                                })
+                            } else {
+                                attention.error({   
+                                    msg: "error deleting account",
+                                })
+                            }
+                        })
+                }
+            });
+        })
+    </script>
+{{end}}

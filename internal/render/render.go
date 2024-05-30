@@ -93,6 +93,8 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	// range through all files ending with *.page.tmpl
 	for _, page := range pages {
 		// page = the full path to the file
+		log.Println("Creating template cache for", page)
+
 		filename := filepath.Base(page) // base returns the last element of the path. Here that will be the name of the file ending in ".page.tmpl"
 		// if page is "path/to/file/page.tmpl", filename will be "page.tmpl".
 		// ts is template set
