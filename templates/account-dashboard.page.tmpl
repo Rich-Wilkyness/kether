@@ -9,9 +9,9 @@
 
                 <h1 class="text-center mt-4">Account Page</h1>
                 <p>
-                    <strong>First Name:</strong> {{$user.User.FirstName}} <br>
-                    <strong>Last Name:</strong> {{$user.User.LastName}} <br>
-                    <strong>Email:</strong> {{$user.User.Email}}
+                    <strong>First Name:</strong> {{$user.FirstName}} <br>
+                    <strong>Last Name:</strong> {{$user.LastName}} <br>
+                    <strong>Email:</strong> {{$user.Email}}
                 </p>
             </div>
         </div>
@@ -34,6 +34,8 @@
 {{end}}
 
 {{define "js"}}
+    {{$user := index .Data "user"}}
+
     <script>
         document.getElementById("delete-account-button").addEventListener("click", function () {
             let html = `
@@ -58,7 +60,7 @@
                     let formData = new FormData(form);
                     // we are adding the csrf token to the form data
                     formData.append("csrf_token", "{{.CSRFToken}}");
-                    formData.append("user_id", "{{.User.ID}}"); // this causes an error when caching 
+                    formData.append("user_id", "{{$user.ID}}"); // this causes an error when caching 
 
                     // fetch is a get if it only takes one argument, but we are passing two arguments so it is a post
                     fetch('/account/delete', {

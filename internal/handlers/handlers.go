@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -226,6 +227,7 @@ func (m *Repository) PostRegister(w http.ResponseWriter, r *http.Request) {
 		Password:    r.Form.Get("password"),
 		AccessLevel: 1,
 	}
+	fmt.Println("here")
 
 	// validate the form
 	form := forms.New(r.PostForm)
@@ -236,6 +238,8 @@ func (m *Repository) PostRegister(w http.ResponseWriter, r *http.Request) {
 		render.Template(w, r, "register.page.tmpl", &models.TemplateData{Form: form})
 		return
 	}
+
+	fmt.Println("here 1")
 
 	// insert the user into the database
 	err = m.DB.RegisterUser(user)
@@ -345,6 +349,7 @@ func (m *Repository) ShowAccountEdit(w http.ResponseWriter, r *http.Request) {
 
 	render.Template(w, r, "account-edit.page.tmpl", &models.TemplateData{
 		Data: data,
+		Form: forms.New(nil),
 	})
 }
 

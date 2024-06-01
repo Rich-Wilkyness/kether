@@ -3,6 +3,7 @@ package dbrepo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Rich-Wilkyness/kether/internal/models"
@@ -20,7 +21,7 @@ func (m *postgresDBRepo) InsertTest(res models.Test) error {
 	// we use stmt when we are putting data into the database
 	// we use query when we are getting data from the database
 	stmt := `INSERT into tests (name, version, class_id, user_id, created_at, updated_at)
-	VALUES ($1, $2, $3, $4, $5, $6)`
+			VALUES ($1, $2, $3, $4, $5, $6)`
 
 	// the .Exec method has risk. User loses connection to internet, closes app, etc. We need to handle this
 	// we use context to handle this (ExecContext or instead QueryRowContext in this case because we are returning a value, not just inserting data)
@@ -58,7 +59,13 @@ func (m *postgresDBRepo) RegisterUser(u models.User) error {
 		return err
 	}
 
-	stmt := `insert into users (first_name = $1, last_name = $2, email = $3, password = $4, access_level = $5, created_at = $6, updated_at = $7)`
+	fmt.Println("hashed password:")
+
+	stmt := `INSERT into users 
+				(first_name, last_name, email, password, access_level, created_at, updated_at)
+			VALUES 
+				($1, $2, $3, $4, $5, $6, $7)`
+
 	_, err = m.DB.ExecContext(ctx, stmt, u.FirstName, u.LastName, u.Email, string(hashedPassword), u.AccessLevel, time.Now(), time.Now())
 	if err != nil {
 		return err
@@ -72,8 +79,9 @@ func (m *postgresDBRepo) GetUserByID(id int) (models.User, error) {
 	defer cancel()
 
 	query := `
-		select id, first_name, last_name, email, created_at, updated_at
-		from users where id = $1`
+		SELECT id, first_name, last_name, email, created_at, updated_at
+		FROM users 
+		WHERE id = $1`
 	row := m.DB.QueryRowContext(ctx, query, id)
 
 	var u models.User
@@ -97,7 +105,8 @@ func (m *postgresDBRepo) UpdateUser(u models.User) error {
 	defer cancel()
 
 	query := `
-		update users set first_name = $1, last_name = $2, email = $3, updated_at = $4
+		UPDATE users 
+		SET first_name = $1, last_name = $2, email = $3, updated_at = $4
 	`
 	_, err := m.DB.ExecContext(ctx, query, u.FirstName, u.LastName, u.Email, time.Now())
 	if err != nil {
@@ -111,7 +120,10 @@ func (m *postgresDBRepo) DeleteUser(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `delete from users where id = $1`
+	query := `DELETE 
+			FROM users 
+			WHERE id = $1`
+
 	_, err := m.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
@@ -128,8 +140,8 @@ func (m *postgresDBRepo) Authenticate(email, testPassword string) (int, string, 
 	var hashedPassword string
 
 	query := `
-		select id, password 
-		from users 
+		SELECT id, password 
+		FROM users 
 		where email = $1
 	`
 	row := m.DB.QueryRowContext(ctx, query, email)
