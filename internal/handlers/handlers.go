@@ -227,7 +227,6 @@ func (m *Repository) PostRegister(w http.ResponseWriter, r *http.Request) {
 		Password:    r.Form.Get("password"),
 		AccessLevel: 1,
 	}
-	fmt.Println("here")
 
 	// validate the form
 	form := forms.New(r.PostForm)
@@ -238,8 +237,6 @@ func (m *Repository) PostRegister(w http.ResponseWriter, r *http.Request) {
 		render.Template(w, r, "register.page.tmpl", &models.TemplateData{Form: form})
 		return
 	}
-
-	fmt.Println("here 1")
 
 	// insert the user into the database
 	err = m.DB.RegisterUser(user)

@@ -3,7 +3,6 @@ package dbrepo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/Rich-Wilkyness/kether/internal/models"
@@ -58,8 +57,6 @@ func (m *postgresDBRepo) RegisterUser(u models.User) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("hashed password:")
 
 	stmt := `INSERT into users 
 				(first_name, last_name, email, password, access_level, created_at, updated_at)

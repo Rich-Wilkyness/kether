@@ -30,6 +30,8 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Get("/user/login", handlers.Repo.ShowLogin)
 	mux.Post("/user/login", handlers.Repo.PostShowLogin)
 
+	mux.Get("/user/logout", handlers.Repo.Logout)
+
 	// this allows our tmpl templates to access our static directory
 	// this directory is where we will store things like images
 	fileServer := http.FileServer(http.Dir("./static/"))             // we first find our directory. by using "./" this is our root. and this is what is required by the Dir function
